@@ -74,13 +74,17 @@ def registerdevices(request):
 	if form.is_valid():
 		save_it = form.save(commit=False)
 		save_it.save()
+		return HttpResponseRedirect('/viewdevices/')
 	return render_to_response("registerdevices.html",locals(),context_instance=RequestContext(request))
 def areports(request):
     content = {}
     list1 = {}
     if request.method == "POST":
         emp1 = request.POST['empid']
+        fromdate = request.POST['fromdate']
+        todate = request.POST['todate']
         z = employee_details.objects.get(employee_id = emp1)
+        print z
         # for i in liste:
         # 	z = i.rfidcardno
         # print z
@@ -91,36 +95,43 @@ def areports(request):
 def dareports(request):
     content = {}
     alist = []
-    bh_list = []
-    #cursor = connection.cursor()
+    cursor = connection.cursor()
     if request.method == "POST":
-        fromdate = request.POST.get('fromdate')
-        todate =  request.POST.get('todate')
-        if fromdate:
-            bh_obj_list=emp_entry.objects.filter(date_time__range=(fromdate, todate))
-            for bh_obj in bh_obj_list: 
-                bh_list.append(bh_obj.rfidcardno)
-            if bh_obj_list:
-                for rfidcardno in set(bh_list):
-                    adict = {}
-                    #emp = emp_entry.objects.all()
-                    #cursor.execute("select * from qpscsmas_emp_entry")
-                    emp1= emp_exit.objects.get(rfidcardno = rfidcardno).filter()
-                    emp = emp_entry.objects.get(rfidcardno = rfidcardno)
-                    #print "employeeeeeee",emp
-                    adict['empid'] = emp.empid
-                    adict['ip_addr'] = emp.ip_addr
-                    adict['ip_addr1'] = emp1.ip_addr
-                    adict['status'] = emp.device_location
-                    adict['status1'] = emp1.device_location
-                    adict['timeforentry']=emp.date_time
-                    adict['timeforexit']=emp1.date_time
-                    adict['rfidcardno'] =emp1.rfidcardno
-                    alist.append(adict)
-        content = {'lists' :alist }
-        content.update(csrf(request))
-    # list1 = emp_entry.objects.all
-    # list1 = emp_entry.objects.all
+        fromdate = request.POST['fromdate']
+        todate =  request.POST['todate']
+        list1 = emp_entry.objects.filter(date_time__range=(fromdate,todate))
+        list2 = emp_exit.objects.filter(date_time__range=(fromdate,todate))
+        for i in list1:
+        	adict = {}
+        	cursor.execute("select employee_id from qpscsmas_employee_details where rfidcardno = %s",[i.rfidcardno])
+        	z = cursor.fetchone()
+        	print type(z)
+        	adict['empid'] = z[0]
+        	print adict['empid']
+        	adict['ip_addr'] = i.ip_addr
+        	ent = i.date_time
+        	cursor.execute("select device_location from qpscsmas_device_info where ip_addr=%s",[i.ip_addr])
+        	dl = cursor.fetchone()
+        	print adict['ip_addr']
+        	if list2:
+        		for j in list2:
+        			if j.rfidcardno == i.rfidcardno:
+        				exit_ip = j.ip_addr
+        				cursor.execute("select device_location from qpscsmas_device_info where ip_addr=%s",[j.ip_addr])
+        				dl2 = cursor.fetchone()
+        				ext = j.date_time
+        	adict['ip_addr1'] = exit_ip
+        	print "exit ip",adict['ip_addr1']
+        	adict['b_entry'] = dl[0]
+        	print adict['b_entry']
+        	adict['b_exit'] = dl2[0]
+        	print adict['b_exit']
+        	adict['entry_time'] = ent
+        	adict['exit_time'] = ext
+        	adict['rfidcardno'] = i.rfidcardno
+        	print adict['rfidcardno']
+        	alist.append(adict)
+        	content = {'lists' :alist}
     return render_to_response("dareports.html", content, context_instance=RequestContext(request))
 
 def mealreports(request):
