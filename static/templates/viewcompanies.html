@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %} 
+<div class="pageheader">
+                <div class="pageicon"><span class="iconfa-briefcase"></span></div>
+                    <div class="pagetitle"><h1>View Companies</h1></div>
+                    <hr />
+<form method="POST" action="">
+<table class="table table-hover table-striped table-bordered">
+	<tr>
+		<td>Company Name</td>
+		<td>Location</td>
+		<td>Contract No.</td>
+		<td>Contract Title</td>
+	</tr>
+	{% for obj in lists %}
+	<tr>
+		<td>
+		{{ obj.company_name }}
+		</td>
+		<td>
+		{{ obj.company_location }}
+		</td>
+		<td>
+		{{ obj.contract_no }}
+		</td>
+		<td>
+		{{ obj.contracy_title }}
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+</form>
+</div>
+{% endblock %}

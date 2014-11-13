@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %} 
+<div class="pageheader">
+    <div class="pageicon"><span class="iconfa-pencil"></span></div>
+        <div class="pagetitle"><h1>Accomodation Reports</h1></div>
+</div>
+
+<div class="maincontent">
+        <div class="maincontentinner">
+            <div class="row">
+            <div class="col-md-12">
+               <div class="panel">
+                 <div class="panel-heading">
+                       
+                          <span class="tools pull-right">
+                            <a class="fa fa-chevron-down" href="javascript:;"></a>
+                            <a class="fa fa-cog" href="javascript:;"></a>
+                            <a class="fa fa-times" href="javascript:;"></a>
+                         </span>     
+                    </div>
+                <div class="panel-body" >
+                    <div class="span9">
+                        <form method = "POST" action="areports" class="stdform">{% csrf_token %}
+                    <!-- {{ form.as_p }} -->
+                      <div class="form-control span6 text-center" style="float:left;margin-left:-185px">
+        <!-- From : <input type="date" name="from" /> -->
+                    <input size="16" type="text" name="empid" id="" required placeholder="Employee Id.." />
+                    </div>
+                    <div class="form-group " style="float: left;margin-top: 0px;margin-right:-137px;">
+                    <input size="16" type="text" name="fromdate" id="calendar" required placeholder="From Date.."/>
+                   </div>
+                   <div class="form-group" style="float: right;margin-top: 0px;margin-right: -107px;" >
+                     <input size="16" type="text" name="todate" id="calendar2" required placeholder="To Date.."/>
+                    </div>
+                     <div class="clearfix"></div>
+        
+                     <div class="row">
+                    <div class="form-group text-center">
+                       
+                <button type="submit" class="btn btn-primary" style="margin-left:100px;">Submit</button>      
+          </div></div>
+                    </form>
+                </div>
+                </div><!--panel body-->
+                </div><!--panel-->
+
+      </div><!--.col-->
+      </div><!--row-->
+       <div class="clearfix"></div>
+        
+       <div class="row">
+            <div class="col-md-12">
+              <div class="text-right">
+             <button type="button" class="btn btn-info" onclick="Export('excel')">Export to Excel</button><br></br>
+             <button type="button" class="btn btn-info" onclick="Export('pdf')">  Export to Pdf  </button> 
+           </div>
+            <input type="hidden" value="{{frmdate}}" id="frmdate"/>
+            <input type="hidden" value="{{tdate}}" id="tdate"/>
+               
+                <div class="table-responsive" style="padding-left: 20px;">
+                  <h4>Current Status Of Employee</h4>
+            
+              <table class="table table-bordered table-striped" id="active-members">
+                <thead>
+                  <tr>
+                    <!-- <th>Rfi<i class="fa fa-sort"></i></th> -->
+                   <th>Emp Id<i class="fa fa-sort"></i></th>
+                    <!-- <th>Emp Name<i class="fa fa-sort"></i></th> -->
+                    <th>Building<i class="fa fa-sort"></i></th> 
+                    <!-- <th>Status<i class="fa fa-sort"></i></th> -->                        
+                  </tr>
+                </thead>
+                <tbody>
+                    {% for r in lists %}
+                    <tr>
+                    <!-- <td align="left">{{ r.rfid}}</td>  -->
+                    <td align="left">{{ r.empid }}</td> 
+                    <!-- <td align="left">{{ r.empname}}</td>  -->
+                    <td align="left">{{ r.device_location }}</td>
+                    <!-- <td align="left">{{r.status}}</td> -->
+                    </tr>
+                    {% endfor %}            
+                </tbody>
+              </table>
+             
+              
+            </div>                
+            </div><!--.col-->
+      </div><!--row-->
+        </div>
+    </div>
+{% endblock %}

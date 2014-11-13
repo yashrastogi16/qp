@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %} 
+<div class="pageheader">
+                <div class="pageicon"><span class="iconfa-briefcase"></span></div>
+                    <div class="pagetitle"><h1>View Devices</h1></div>
+                    <hr />
+<form method="POST" action="">
+<table class="table table-hover table-striped table-bordered">
+	<tr>
+		<td>Device ID</td>
+		<td>Device Location</td>
+		<td>Installation Date</td>
+	</tr>
+	{% for obj in lists %}
+	<tr>
+		<td>
+		{{ obj.device_id }}
+		</td>
+		<td>
+		{{ obj.device_location }}
+		</td>
+		<td>
+		{{ obj.Installation_Date }}
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+</form>
+</div>
+{% endblock %}

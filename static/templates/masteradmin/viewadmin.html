@@ -1,0 +1,42 @@
+{% extends "adminbase.html" %}
+{% block content %} 
+<div class="pageheader">
+                <div class="pageicon"><span class="iconfa-pencil"></span></div>
+                    <div class="pagetitle"><h1>View Admin</h1></div>
+                    <hr />
+<form method="POST" action="">
+<table class="table table-hover table-striped table-bordered">
+	<tr>
+		<td>FirstName</td>
+		<td>LastName</td>
+		<td>Employee_ID</td>
+		<td>RFID</td>
+		<td>Employee Type</td>
+		<td>Company</td>
+	</tr>
+	{% for obj in lists %}
+	<tr>
+		<td>
+		{{ obj.first_name }}
+		</td>
+		<td>
+		{{ obj.last_name }}
+		</td>
+		<td>
+		{{ obj.employee_id }}
+		</td>
+		<td>
+		{{ obj.rfidcardno }}
+		</td>
+		<td>
+		{{ obj.employee_type }}
+		</td>
+		<td>
+		{{ obj.company }}
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+</form>
+</div>
+{% endblock %}
