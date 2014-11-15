@@ -2,14 +2,27 @@ from .models import *
 from django import forms
 from django.core.validators import validate_email
 
+class userForm(forms.ModelForm):
+	password = forms.CharField(widget=forms.PasswordInput)
+	class Meta:
+		model = Qpadmin
+		fields = '__all__'
+class roleForm(forms.ModelForm):
+    class Meta:
+        model = role
+        fields = '__all__'
 class associative_companyForm(forms.ModelForm):
 	class Meta:
 		model = associative_company
 		fields = '__all__'
-class QpadminForm(forms.ModelForm):
+class associative_companyForm(forms.ModelForm):
 	class Meta:
-		model = Qpadmin
+		model = associative_company
 		fields = '__all__'
+# class QpadminForm(forms.ModelForm):
+# 	class Meta:
+# 		model = Qpadmin
+# 		fields = '__all__'
 class employee_detailsForm(forms.ModelForm):
 	class Meta:
 		model = employee_details

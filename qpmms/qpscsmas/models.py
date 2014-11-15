@@ -52,6 +52,7 @@ class Qpadmin(models.Model):
 	resident_location = models.CharField('Resident Location', max_length=50)
 	contact_no = models.CharField('Contact No.', max_length=30, blank=True)
 	status = models.CharField('Status', max_length=10,choices=STATUS_CHOICES, null=True)
+	role = models.ForeignKey('role')
 	date_time=models.DateTimeField(auto_now=True)
 	def __unicode__(self):
 		return smart_unicode(self.email_id)
@@ -161,9 +162,3 @@ class userlogout(models.Model):
 	logouttime  = models.DateTimeField() 
 	def __unicode__(self):
 		return smart_unicode(self.userid)
-
-
-
-
-	
-

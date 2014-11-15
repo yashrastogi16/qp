@@ -2,8 +2,9 @@ from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.static import serve
-
+# Uncomment the next two lines to enable the admin:
+from django.contrib import admin
+admin.autodiscover()
 
 urlpatterns = patterns('qpscsmas.views',
     # Examples:
@@ -11,11 +12,10 @@ urlpatterns = patterns('qpscsmas.views',
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
-    # url(r'^dashboard/', 'qpscsmas.views.dashboard',name='dashboard'),
-    # url(r'^login/','qpscsmas.views.login',name='login'),
-    url(r'^$','login'),
-    url(r'^masteradmin','masteradmin'),
-    url(r'^login','login'),
+    url(r'^login/', 'login'),
+    url(r'^logout/', 'logout'),
+    url(r'^$', 'login'),
+    url(r'^index/','index'),
     url(r'^dashboard','dashboard'),
     url(r'^registeremployee','registeremployee'),
     url(r'^viewemployee','viewemployee'),

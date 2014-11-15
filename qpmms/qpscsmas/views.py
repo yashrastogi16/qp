@@ -1,8 +1,20 @@
+from django.shortcuts import render
+from django.http import HttpResponse
+from models import *
+from django.db.models import Q
+from django.shortcuts import render_to_response, HttpResponseRedirect
+from datetime import *
+from forms import *
 from django.shortcuts import render, render_to_response, RequestContext, HttpResponseRedirect, HttpResponse
 from django.core.context_processors import csrf
-from django.db import connection
 from .models import *
 from forms import *
+from django.template import RequestContext
+from django.core.context_processors import csrf
+from django.core.paginator import *
+import xlrd
+from qpmms import *
+from django.template.loader import render_to_string
 import datetime
 import time
 from reportlab.pdfgen import canvas
@@ -11,6 +23,7 @@ from reportlab.lib.pagesizes import landscape
 from reportlab.platypus import Image
 import hashlib
 import random
+from django.db import connection
 from datetime import datetime, timedelta, date
 from django.conf import settings as conf_settings
 import os
@@ -19,14 +32,30 @@ from django.template.loader import get_template
 from django.template import Context, RequestContext
 from django.core.mail import send_mail,  EmailMultiAlternatives
 from django.contrib import messages
-
+from apscheduler.schedulers.background import BackgroundScheduler
+from django.utils.datastructures import MultiValueDictKeyError
+import socket
+import datetime
+def user_login_required(f):
+		def wrap(request, *args, **kwargs):
+				print "decorater is calling"
+				#this check the session if userid key exist, if not it will redirect to login page
+				if 'user' not in request.session.keys():
+						return HttpResponseRedirect("/")
+				return f(request, *args, **kwargs)
+		wrap.__doc__=f.__doc__
+		wrap.__name__=f.__name__
+		return wrap
 def login(request):
-	form = QpadminForm(request.POST)
+	form = userForm(request.POST)
 	content = {}
 	content['form'] = form
 	content.update(csrf(request))
+	if 'user' in request.session.keys():
+		return HttpResponseRedirect("/index")
+
 	if request.method == "POST":
-		print "post method00000000000000000000000000000000000000000000000000"
+		print "post method"
 		username = request.POST['userid']
 		# password = request.POST['password']
 		password = request.POST['password']
@@ -34,41 +63,79 @@ def login(request):
 		user_list = Qpadmin.objects.filter(user_id=username, password1=password)
 		if(user_list):
 			userobj = user_list[0]
-			#s=userlogin(username = userobj.username, userid = userobj.user_id, role = userobj.role, logintime = datetime.now())
+			s=userlogin(username = userobj.username, userid = userobj.user_id, role = userobj.role, logintime = datetime.datetime.now())
 			s.save()   
 			request.session['user'] = userobj
 			# return HttpResponse("This is Admin Home Page")
-			return HttpResponseRedirect("/dashboard")
+			return HttpResponseRedirect("/index")
 		else:
-			content['err_msg'] = 'Invalid Credentials'
+			content['err_msg'] = 'Invalid username or password'
+			# return HttpResponse("Login Failed")
 		return render_to_response('login.html', content, context_instance=RequestContext(request))
 
 	return render_to_response('login.html', content, context_instance=RequestContext(request))
+@user_login_required
 def dashboard(request):
 	content = {}
 	content.update(csrf(request))
+	user = request.session['user']
+	content={'username' :user.username,'email_id':user.email_id}
 	return render_to_response('dashboard.html', content, context_instance=RequestContext(request))
+
+@user_login_required
+def index(request):
+	content = {}
+	content.update(csrf(request))
+	user = request.session['user']
+	content={'username' :user.username,'email_id':user.email_id}
+	if str(user.role) == 'Admin' or str(user.role) == 'admin':
+		return render_to_response('dashboard.html', content, context_instance=RequestContext(request))
+	if str(user.role) == 'Master Admin' or str(user.role) == 'master admin' or 'Master admin' or 'Master':
+		return render_to_response(['madmin_dashboard.html','base.html'], content, context_instance=RequestContext(request))
+	else:
+		return render_to_response(['login.html','base.html'], content, context_instance=RequestContext(request))
+	
+def logout(request):
+	print "logout"
+	print type(request)
+	user = request.session['user']
+	s=userlogout(username = user.username, userid = user.user_id, role = user.role, logouttime = datetime.datetime.now())            
+	s.save()
+	session_keys = request.session.keys()
+	form = userForm(request.POST)
+	for key in session_keys:
+		print "del"
+		del request.session[key]
+	# content.update(csrf(request))
+	return HttpResponseRedirect('/')
+	# return render_to_response('login.html', {'form': form}, context_instance=RequestContext(request))
+@user_login_required
 def viewemployee(request):
 	lists = employee_details.objects.all()
 	return render_to_response('viewemployee.html', locals(), context_instance=RequestContext(request))
+@user_login_required
 def registeremployee(request):
 	form = employee_detailsForm(request.POST or None)
 	if form.is_valid():
 		save_it = form.save(commit=False)
 		save_it.save()
 	return render_to_response("registeremployee.html",locals(),context_instance=RequestContext(request))
+@user_login_required
 def viewcompanies(request):
 	lists = associative_company.objects.all()
 	return render_to_response('viewcompanies.html', locals(), context_instance=RequestContext(request))
+@user_login_required
 def registercompanies(request):
 	form = associative_companyForm(request.POST or None)
 	if form.is_valid():
 		save_it = form.save(commit=False)
 		save_it.save()
 	return render_to_response("registercompanies.html",locals(),context_instance=RequestContext(request))
+@user_login_required
 def viewdevices(request):
 	lists = device_info.objects.all()
 	return render_to_response('viewdevices.html', locals(), context_instance=RequestContext(request))
+@user_login_required
 def registerdevices(request):
 	form = device_infoForm(request.POST or None)
 	if form.is_valid():
@@ -76,6 +143,7 @@ def registerdevices(request):
 		save_it.save()
 		return HttpResponseRedirect('/viewdevices/')
 	return render_to_response("registerdevices.html",locals(),context_instance=RequestContext(request))
+@user_login_required
 def areports(request):
     content = {}
     list1 = {}
@@ -92,6 +160,7 @@ def areports(request):
         list1 = emp_entry.objects.filter(rfidcardno = z)
     content = {'lists' :list1 }
     return render_to_response("areports.html",content,context_instance=RequestContext(request))
+@user_login_required
 def dareports(request):
     content = {}
     alist = []
@@ -133,7 +202,7 @@ def dareports(request):
         	alist.append(adict)
         	content = {'lists' :alist}
     return render_to_response("dareports.html", content, context_instance=RequestContext(request))
-
+@user_login_required
 def mealreports(request):
 	content = {}
 	alist = []
@@ -172,7 +241,7 @@ def mealreports(request):
 					print alist
 		content = {'lists' :alist }
 	return render_to_response("mealreports.html",content, context_instance=RequestContext(request))
-
+@user_login_required
 def detailedmealsreport(request):
 	content={}
 	list1 = []
@@ -236,13 +305,14 @@ def detailedmealsreport(request):
 				print "Hello How are you!!!"
 	content['comp_list']=comp_list
 	return render_to_response("detailedmealsreport.html",content,context_instance=RequestContext(request))
-
+@user_login_required
 def mtconfigure(request):
 	form = meal_timingForm(request.POST or None)
 	if form.is_valid():
 		save_it = form.save(commit=False)
 		save_it.save()
 	return render_to_response("mtconfigure.html",locals(), context_instance=RequestContext(request))
+@user_login_required
 def priceconfigure(request):
 	content = {}
 	content.update(csrf(request))
@@ -259,22 +329,11 @@ def export_to_excel(request):
     response['Content-Disposition'] = 'attachment; filename='+filename
     response['Content-Type'] = 'application/vnd.ms-excel; charset=utf-16'
     return response
+@user_login_required
 def masteradmin(request):
 	content = {}
 	content.update(csrf(request))
 	return render_to_response("masteradmin/dashboard.html",content, context_instance=RequestContext(request))
 def custom_404(request):
 	return render_to_response("404.html",RequestContext(request))
-
-# def logout(request):
-#     user = request.session['user']
-#     s=userlogout(username = user.username, userid = user.user_id,d
-# role = user.role, logouttime = datetime.now())            
-#     s.save()
-#     session_keys = request.session.keys()
-#     form = UserForm(request.POST)
-#     for key in session_keys:
-#         del request.session[key]
-#     # content.update(csrf(request))
-#     return render_to_response('login.html', {'form': form}, context_instance=RequestContext(request))
 
